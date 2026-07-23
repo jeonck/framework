@@ -1,0 +1,67 @@
+baseURL = 'https://framework.metacog.co.kr/'
+locale = 'en-us'
+title = 'Framework Made Simple'
+theme = 'PaperMod'
+paginate = 10
+
+[params]
+  env = 'production'
+  title = 'Framework Made Simple'
+  description = "Grown-up frameworks explained the way you'd explain them to a 12-year-old — one clear analogy, one simple diagram, one real example."
+  author = 'jeonck'
+  defaultTheme = 'auto'
+  disableThemeToggle = false
+  ShowReadingTime = true
+  ShowShareButtons = true
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  ShowCodeCopyButtons = true
+  ShowWordCount = true
+  ShowRssButtonInSectionTermList = true
+  UseHugoToc = true
+  disableSpecial1stPost = false
+  disableScrollToTop = false
+  comments = false
+  hidemeta = false
+  hideSummary = false
+  showtoc = false
+  tocopen = false
+
+  [params.homeInfoParams]
+    Title = 'Framework Made Simple'
+    Content = 'Big ideas from business and school, explained with toys, sports, and everyday stories — plus a picture for every one.'
+
+  [[params.socialIcons]]
+    name = 'github'
+    url = 'https://github.com/jeonck/framework'
+
+[menu]
+  [[menu.main]]
+    identifier = 'input'
+    name = 'Add a Framework ✏️'
+    url = 'https://github.com/jeonck/framework/edit/main/input/term.md'
+    weight = 5
+  [[menu.main]]
+    identifier = 'posts'
+    name = 'Posts'
+    url = '/posts/'
+    weight = 10
+  [[menu.main]]
+    identifier = 'tags'
+    name = 'Tags'
+    url = '/tags/'
+    weight = 20
+  [[menu.main]]
+    identifier = 'search'
+    name = 'Search'
+    url = '/search/'
+    weight = 30
+
+[outputs]
+  home = ['HTML', 'RSS', 'JSON']
+
+# Quiz sections use raw HTML <details>/<summary> accordions in generated posts
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
