@@ -20,7 +20,7 @@ pipeline/generate.py
   - Claude가 용어를 분석해 섹션 구성:
       🔍 What Is It? (쉬운 정의+설명) / 🧸 Think Of It Like This (일상 비유) /
       🖼️ Picture It (SVG 도식) / 🔀 How It Breaks Down (Mermaid, 해당 시) /
-      🌍 Real World Example / 🎯 Try It Yourself
+      🌍 Real World Example (SVG 도식 포함) / 🎯 Try It Yourself
   - content/posts/YYYY-MM-DD-....md 로 저장
         │
         ▼  변경사항 커밋 & push

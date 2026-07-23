@@ -73,6 +73,7 @@ JSON in exactly this format, no other text:
  "svg_diagram": "a complete, self-contained <svg>...</svg> string that draws a simple, clean, hand-drawn-style schematic of the framework using only <rect>, <circle>, <ellipse>, <line>, <path>, <text>, and <tspan> (no external images/fonts/scripts). viewBox=\\"0 0 600 320\\". Use a small friendly palette (e.g. #2563eb, #16a34a, #f59e0b, #ef4444, #64748b) with white/light fills and readable dark text labels (font-family sans-serif). Label every part in plain English so it teaches on its own.",
  "mermaid_diagram": "a short Mermaid diagram (flowchart TD, or graph TD, or mindmap) that shows the framework's structure or steps in 4-10 lines, using plain English labels in square brackets. Leave this as an empty string if a flow/tree diagram would not add anything beyond the svg_diagram.",
  "real_world_example": "2-4 sentences giving one concrete real-world example of this framework actually being used (business, school project, sports team, etc.), in plain English",
+ "example_svg_diagram": "a second, complete, self-contained <svg>...</svg> string — same technical rules as svg_diagram — that diagrams THIS SPECIFIC real_world_example (its actual groups/steps/numbers), NOT the kid analogy again. This is a different picture from svg_diagram: it shows the grown-up example visually so a 12-year-old can map the analogy onto a real situation.",
  "try_it_yourself": "one short, concrete question or mini-challenge inviting the reader to apply the framework to their own life right now",
  "tags": ["kebab-case-tag", "max 3, first one should be the framework name itself in kebab-case"]}}
 
@@ -80,12 +81,13 @@ Requirements: never use the word "jargon" or say "in simple terms" — just BE s
 Do not define the framework using other business jargon; if you must name a related
 concept, explain that too in one plain clause. The analogy in analogy_story and the
 svg_diagram should reinforce the SAME mental picture (don't introduce a second,
-unrelated analogy in the diagram).
+unrelated analogy in the diagram). example_svg_diagram must depict the
+real_world_example instead — its own boxes/labels, not the analogy's toys/candy/etc.
 
-SVG rules: escape every double quote inside the svg_diagram string as \\" and use \\n
-for line breaks so the result is valid JSON. Keep it strictly under 40 lines of markup,
-purely geometric/text (no raster images, no <script>), and make sure text labels do not
-overlap shapes.
+SVG rules (applies to both svg_diagram and example_svg_diagram): escape every double
+quote inside the string as \\" and use \\n for line breaks so the result is valid JSON.
+Keep each one strictly under 40 lines of markup, purely geometric/text (no raster
+images, no <script>), and make sure text labels do not overlap shapes.
 """
 
 # 포스트 본문 섹션 제목
@@ -154,14 +156,15 @@ def parse_result(text: str) -> dict | None:
     except json.JSONDecodeError:
         return None
     required = ("title", "one_liner", "explanation", "analogy_title",
-                "analogy_story", "svg_diagram")
+                "analogy_story", "svg_diagram", "real_world_example",
+                "example_svg_diagram")
     if not all(isinstance(data.get(k), str) and data.get(k).strip() for k in required):
         return None
-    if "<svg" not in data["svg_diagram"]:
+    if "<svg" not in data["svg_diagram"] or "<svg" not in data["example_svg_diagram"]:
         return None
     mermaid = data.get("mermaid_diagram") or ""
     data["mermaid_diagram"] = str(mermaid).strip()
-    data["real_world_example"] = str(data.get("real_world_example") or "").strip()
+    data["real_world_example"] = str(data["real_world_example"]).strip()
     data["try_it_yourself"] = str(data.get("try_it_yourself") or "").strip()
     tags = data.get("tags") or []
     data["tags"] = [slugify(str(t)) for t in tags[:3] if str(t).strip()] or ["framework"]
@@ -250,7 +253,10 @@ def write_post(term: str, result: dict, date: datetime) -> Path:
         sections.append(f"## {HEADING_BREAKDOWN}\n\n```mermaid\n{result['mermaid_diagram']}\n```\n")
 
     if result["real_world_example"]:
-        sections.append(f"## {HEADING_EXAMPLE}\n\n{result['real_world_example']}\n")
+        example = f"## {HEADING_EXAMPLE}\n\n{result['real_world_example']}\n"
+        if result["example_svg_diagram"]:
+            example += f"\n{result['example_svg_diagram']}\n"
+        sections.append(example)
 
     if result["try_it_yourself"]:
         sections.append(f"## {HEADING_TRY}\n\n{result['try_it_yourself']}\n")
