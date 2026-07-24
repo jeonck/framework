@@ -74,7 +74,7 @@ JSON in exactly this format, no other text:
  "mermaid_diagram": "a short Mermaid diagram (flowchart TD, or graph TD, or mindmap) that shows the framework's structure or steps in 4-10 lines, using plain English labels in square brackets. Leave this as an empty string if a flow/tree diagram would not add anything beyond the svg_diagram.",
  "real_world_example": "2-4 sentences giving one concrete real-world example of this framework actually being used (business, school project, sports team, etc.), in plain English",
  "example_svg_diagram": "a second, complete, self-contained <svg>...</svg> string — same technical rules as svg_diagram — that diagrams THIS SPECIFIC real_world_example (its actual groups/steps/numbers), NOT the kid analogy again. This is a different picture from svg_diagram: it shows the grown-up example visually so a 12-year-old can map the analogy onto a real situation.",
- "try_it_yourself": "one short, concrete question or mini-challenge inviting the reader to apply the framework to their own life right now",
+ "try_it_yourself": ["3-4 bullets, each applying this framework to a DIFFERENT current/recent industry issue or trend (e.g. AI adoption, chip/supply-chain shortages, streaming or retail consolidation, remote-work policy, climate/EV transition, layoffs, data privacy regulation — pick whichever fit this framework best). Each bullet names the real situation and says concretely what applying this framework would mean there. Plain English, no jargon left unexplained."],
  "tags": ["kebab-case-tag", "max 3, first one should be the framework name itself in kebab-case"]}}
 
 Requirements: never use the word "jargon" or say "in simple terms" — just BE simple.
@@ -83,6 +83,13 @@ concept, explain that too in one plain clause. The analogy in analogy_story and 
 svg_diagram should reinforce the SAME mental picture (don't introduce a second,
 unrelated analogy in the diagram). example_svg_diagram must depict the
 real_world_example instead — its own boxes/labels, not the analogy's toys/candy/etc.
+
+try_it_yourself rules: these bullets are NOT about the reader's own school/hobby life
+— every bullet must name a real, currently-relevant industry or business situation
+(company, sector, or trend) and describe how this framework would actually be applied
+there. Vary the industries across the 3-4 bullets (don't repeat the same sector as
+real_world_example). Each bullet is 1-2 sentences, concrete, and still in plain,
+jargon-free English a curious teenager could follow.
 
 SVG rules (applies to both svg_diagram and example_svg_diagram): escape every double
 quote inside the string as \\" and use \\n for line breaks so the result is valid JSON.
@@ -165,7 +172,12 @@ def parse_result(text: str) -> dict | None:
     mermaid = data.get("mermaid_diagram") or ""
     data["mermaid_diagram"] = str(mermaid).strip()
     data["real_world_example"] = str(data["real_world_example"]).strip()
-    data["try_it_yourself"] = str(data.get("try_it_yourself") or "").strip()
+    try_it = data.get("try_it_yourself") or []
+    if isinstance(try_it, str):  # 모델이 옛 형식(단일 문장)으로 답한 경우 한 항목으로 감쌈
+        try_it = [try_it] if try_it.strip() else []
+    data["try_it_yourself"] = [str(b).strip() for b in try_it if str(b).strip()]
+    if not data["try_it_yourself"]:
+        return None
     tags = data.get("tags") or []
     data["tags"] = [slugify(str(t)) for t in tags[:3] if str(t).strip()] or ["framework"]
     return data
@@ -259,7 +271,8 @@ def write_post(term: str, result: dict, date: datetime) -> Path:
         sections.append(example)
 
     if result["try_it_yourself"]:
-        sections.append(f"## {HEADING_TRY}\n\n{result['try_it_yourself']}\n")
+        bullets = "\n".join(f"- {b}" for b in result["try_it_yourself"])
+        sections.append(f"## {HEADING_TRY}\n\n{bullets}\n")
 
     post = f"""---
 title: {yaml_quote(result['title'])}
