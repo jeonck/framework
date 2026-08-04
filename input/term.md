@@ -11,4 +11,5 @@
     so you can leave old lines in place.
 -->
 ```
+TTP는 Tactics, Techniques, and Procedures의 약자
 ```
