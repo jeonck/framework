@@ -48,6 +48,11 @@ KST = timezone(timedelta(hours=9))
 # CLI_TIMEOUT_SEC 환경변수로 조정 가능.
 CLI_TIMEOUT = int(os.environ.get("CLI_TIMEOUT_SEC", "1200"))
 
+# 폭주 방지 — 한 줄 = 용어 1개 = 포스트 1개이므로, 설명문 블록을 통째로 붙여넣으면
+# 줄 수만큼 엉뚱한 포스트가 생성되고 CI가 몇 시간씩 돈다(실제로 18줄짜리 붙여넣기가
+# 18개 포스트를 만들 뻔했다). 이 상한을 넘으면 아무것도 생성하지 않고 중단한다.
+MAX_TERMS_PER_RUN = int(os.environ.get("MAX_TERMS_PER_RUN", "5"))
+
 # ============================== 도메인 설정 =================================
 # 이 블록만 새 프로젝트 주제에 맞게 교체한다. 아래 엔진 코드는 건드릴 필요 없다.
 #
@@ -139,6 +144,15 @@ def read_terms() -> list[str]:
         line = line.strip()
         if line and not line.startswith("<!--") and not line.startswith("#"):
             terms.append(line)
+    if len(terms) > MAX_TERMS_PER_RUN:
+        log(f"중단: 용어가 {len(terms)}개로 상한({MAX_TERMS_PER_RUN}개)을 넘습니다.")
+        log("→ 한 줄 = 용어 1개 = 포스트 1개입니다. 설명문을 통째로 붙여넣으면")
+        log("  줄 수만큼 엉뚱한 포스트가 생성되므로 아무것도 생성하지 않고 멈춥니다.")
+        log("→ input/term.md 코드블록에 짧은 용어만 한 줄씩 남기세요. 예: MECE")
+        log("→ 정말 많이 처리하려면 MAX_TERMS_PER_RUN 값을 올리세요.")
+        for i, t in enumerate(terms[:10], 1):
+            log(f"   {i:2}. {t[:60]}")
+        sys.exit(1)
     return terms
 
 
