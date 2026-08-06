@@ -11,5 +11,4 @@
     so you can leave old lines in place.
 -->
 ```
-CODER framework (Context, Ownership, Decision, Effect, Reflection)
 ```
