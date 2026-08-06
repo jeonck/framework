@@ -43,6 +43,11 @@ CONTENT_DIR = ROOT / "content" / "posts"
 
 KST = timezone(timedelta(hours=9))
 
+# 포스트 1개는 SVG 도식 2개를 포함해 ~11KB를 생성하므로 실측 8~9분이 걸린다.
+# 360초(기본값이던 값)로는 매번 타임아웃 → 재시도까지 12분 낭비 후 실패했다.
+# CLI_TIMEOUT_SEC 환경변수로 조정 가능.
+CLI_TIMEOUT = int(os.environ.get("CLI_TIMEOUT_SEC", "1200"))
+
 # ============================== 도메인 설정 =================================
 # 이 블록만 새 프로젝트 주제에 맞게 교체한다. 아래 엔진 코드는 건드릴 필요 없다.
 #
@@ -220,10 +225,10 @@ def generate_cli(model: str, term: str) -> dict | None:
            "--output-format", "text", "--append-system-prompt", SYSTEM_PROMPT]
     for attempt in (1, 2):
         try:
-            result = subprocess.run(cmd, input=prompt, env=env, timeout=360,
+            result = subprocess.run(cmd, input=prompt, env=env, timeout=CLI_TIMEOUT,
                                      capture_output=True, text=True)
         except subprocess.TimeoutExpired:
-            log(f"  CLI 타임아웃 (시도 {attempt})")
+            log(f"  CLI 타임아웃 {CLI_TIMEOUT}초 (시도 {attempt})")
             continue
         if result.returncode != 0:
             err = (result.stderr or result.stdout).strip()
