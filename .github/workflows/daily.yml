@@ -25,6 +25,9 @@ jobs:
     # push 이벤트에서도 실행 — input/term.md 저장이 곧 후킹 트리거 (크론 없음, 후킹 전용).
     # 이미 게시된 용어는 해시 dedup으로 즉시 스킵되므로 중복 실행 비용 없음.
     runs-on: ubuntu-latest
+    # concurrency 그룹을 쓰므로 잡 하나가 매달리면 이후 실행이 전부 막힌다
+    # (실제로 큐에 54시간 갇힌 적 있음). GitHub 기본 360분 대신 상한을 둔다.
+    timeout-minutes: 90
     outputs:
       changed: ${{ steps.commit.outputs.changed }}
     steps:
@@ -79,6 +82,7 @@ jobs:
     # 수동·push 이벤트에서는 신규 포스트 유무와 무관하게 항상 배포 (사이트 파일 변경도 반영)
     if: ${{ !cancelled() && (needs.generate.outputs.changed == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'push') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -107,6 +111,9 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v5
         with:
-          # 기본 10분으로는 Pages가 deployment_in_progress에서 오래 머물 때
-          # 액션이 먼저 포기해 배포가 실패로 표시된다(실제로는 뒤늦게 반영됨).
-          timeout: 1800000 # 30분
+          # 10분(600000ms)이 액션이 허용하는 최대값이자 기본값이다 — 더 크게 주면
+          # 경고와 함께 조용히 잘린다. Pages 장애로 deployment_in_progress가
+          # 10분을 넘기면 이 잡은 실패로 뜨지만 배포 자체는 뒤늦게 반영되므로,
+          # 그 경우엔 재실행보다 Pages 상태(githubstatus.com)를 먼저 확인할 것.
+          timeout: 600000 # 10분 (최대값)
+          error_count: 20 # 일시적 상태조회 오류에 좀 더 관대하게 (기본 10)
