@@ -43,10 +43,11 @@ CONTENT_DIR = ROOT / "content" / "posts"
 
 KST = timezone(timedelta(hours=9))
 
-# 포스트 1개는 SVG 도식 2개를 포함해 ~11KB를 생성하므로 실측 8~9분이 걸린다.
-# 360초(기본값이던 값)로는 매번 타임아웃 → 재시도까지 12분 낭비 후 실패했다.
+# 실측 성공 사례는 43초~7분23초 범위(대부분 1분 내외)다. 10분이면 충분하고,
+# 재시도까지 최악 20분에서 멈춘다 — 이전 1200초는 응답이 망가졌을 때 40분씩
+# 매달리게 만들었다(SCOUT 건: 15분30초 만에 파싱 실패 후 재시도).
 # CLI_TIMEOUT_SEC 환경변수로 조정 가능.
-CLI_TIMEOUT = int(os.environ.get("CLI_TIMEOUT_SEC", "1200"))
+CLI_TIMEOUT = int(os.environ.get("CLI_TIMEOUT_SEC", "600"))
 
 # 폭주 방지 — 한 줄 = 용어 1개 = 포스트 1개이므로, 설명문 블록을 통째로 붙여넣으면
 # 줄 수만큼 엉뚱한 포스트가 생성되고 CI가 몇 시간씩 돈다(실제로 18줄짜리 붙여넣기가
@@ -255,7 +256,11 @@ def generate_cli(model: str, term: str) -> dict | None:
         parsed = parse_result(result.stdout)
         if parsed:
             return parsed
-        log(f"  JSON 파싱 실패 (시도 {attempt}): {result.stdout[:120]!r}")
+        # 앞 120자만 찍으면 응답이 잘렸는지 형식이 틀렸는지 구분이 안 된다 — 길이와 끝부분도 남긴다
+        out = result.stdout
+        log(f"  JSON 파싱 실패 (시도 {attempt}, {len(out)}자)")
+        log(f"    앞: {out[:100]!r}")
+        log(f"    뒤: {out[-100:]!r}")
     return None
 
 
