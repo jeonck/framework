@@ -11,5 +11,4 @@
     so you can leave old lines in place.
 -->
 ```
-CIPHER framework in security
 ```
